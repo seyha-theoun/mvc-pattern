@@ -7,13 +7,11 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class UpdateResponseDto {
-    String name;
-    String email;
-    String password;
-    String profile;
-
-    public UpdateResponseDto(String name, String email, String password) {
-    }
+    private String name;
+    private String email;
+    private String password;
+    private String profile;
 }

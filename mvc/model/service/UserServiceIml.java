@@ -13,43 +13,43 @@ import java.util.stream.Collectors;
 public class UserServiceIml implements UserService {
 
     private final UserDao userDao = new UserDao();
-    public final UserMapper userMapper = new UserMapper();
+    private final UserMapper userMapper = new UserMapper();
 
     @Override
-    public UserResponseDto createUser(CreateUserDto createUserDto) {
+    public UserResponseDto createUser(
+            CreateUserDto createUserDto
+    ) {
 
-//        );
-//
-//        // Save user to database
-//        userDao.save(user);
-//
-//        // Map User -> UserResponseDto
-//        UserResponseDto userResponseDto = new UserResponseDto(
-//                user.getUuid(),
-//                user.getName(),
-//                user.getEmail(),
-//                user.getProfile()
-//        );
-        User user = userMapper.fromUserCreateDtoToUser(createUserDto);
+        User user =
+                userMapper.fromUserCreateDtoToUser(createUserDto);
+
         userDao.save(user);
 
         return userMapper.fromUserToUserResponseDto(user);
     }
 
-
     @Override
     public List<UserResponseDto> getAllUsers() {
 
-        return userDao.findAllUsers().stream()
+        return userDao.findAllUsers()
+                .stream()
                 .map(userMapper::fromUserToUserResponseDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public UserResponseDto getUserByUuid(String uuid) {
-        User user = userDao.findAllUsers()
-                .stream()
-                .findFirst().get();
+    public UserResponseDto getUserByUuid(
+            String uuid
+    ) {
+
+        List<User> users = userDao.findByUuid(uuid);
+
+        if (users.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = users.get(0);
+
         return userMapper.fromUserToUserResponseDto(user);
     }
 
@@ -59,21 +59,36 @@ public class UserServiceIml implements UserService {
             UpdateResponseDto updateRequestDto
     ) {
 
-        User user = userDao.findByUuid(uuid)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found")
-                );
+        List<User> users = userDao.findByUuid(uuid);
 
-        if (updateRequestDto.getName() != null) {
+        if (users.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = users.get(0);
+
+        if (updateRequestDto.getName() != null
+                && !updateRequestDto.getName().isBlank()) {
+
             user.setName(updateRequestDto.getName());
         }
 
-        if (updateRequestDto.getEmail() != null) {
+        if (updateRequestDto.getEmail() != null
+                && !updateRequestDto.getEmail().isBlank()) {
+
             user.setEmail(updateRequestDto.getEmail());
         }
 
-        if (updateRequestDto.getPassword() != null) {
+        if (updateRequestDto.getPassword() != null
+                && !updateRequestDto.getPassword().isBlank()) {
+
             user.setPassword(updateRequestDto.getPassword());
+        }
+
+        if (updateRequestDto.getProfile() != null
+                && !updateRequestDto.getProfile().isBlank()) {
+
+            user.setProfile(updateRequestDto.getProfile());
         }
 
         userDao.update(user);
@@ -82,28 +97,34 @@ public class UserServiceIml implements UserService {
     }
 
     @Override
-    public int deleteUserByUuid(String uuid) {
+    public int deleteUserByUuid(
+            String uuid
+    ) {
 
-        User user = userDao.findAllUsers()
-                .stream()
-                .filter(u->u.getUuid().equals(uuid))
-                .findFirst().get();
-        userDao.remove(user);
-        return 1;
+        List<User> users = userDao.findByUuid(uuid);
 
+        if (users.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = users.get(0);
+
+        return userDao.remove(user);
     }
-
     @Override
-    public List<UserResponseDto> searchUserByName(String name) {
+    public List<UserResponseDto> searchUserByName(
+            String name
+    ) {
+
         return userDao.findAllUsers()
                 .stream()
-                .filter(u->u.getName()!=null)
-                .filter(u->u.getName()
-                        .toLowerCase()
-                        .contains(name.toLowerCase()))
+                .filter(user -> user.getName() != null)
+                .filter(user ->
+                        user.getName()
+                                .toLowerCase()
+                                .contains(name.toLowerCase())
+                )
                 .map(userMapper::fromUserToUserResponseDto)
-                .toList();
+                .collect(Collectors.toList());
     }
-
-
 }
